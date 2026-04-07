@@ -11,7 +11,9 @@ public class ValidationUtil {
     public static final int MIN_MESSAGE_LENGTH = 1;
     public static final int MAX_MESSAGE_LENGTH = 1_000_000;
     public static final int MIN_IMAGE_DIMENSION = 50;
-    public static final int MAX_IMAGE_DIMENSION = 10000;
+    public static final int MAX_IMAGE_DIMENSION = 4096;
+    public static final int MAX_IMAGE_PIXELS = 12_000_000;
+    public static final long MAX_IMAGE_FILE_BYTES = 12L * 1024L * 1024L;
     public static final int HEADER_BITS = 64;
 
     public static void validateMessage(String message) {
@@ -36,14 +38,18 @@ public class ValidationUtil {
         }
     }
 
-    public static void validateImage(BufferedImage image) {
-        if (image == null) {
-            throw new IllegalArgumentException("Image cannot be null");
+    public static void validateImageFileSize(long sizeBytes) {
+        if (sizeBytes > MAX_IMAGE_FILE_BYTES) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Image file is too large for the deployed server. Maximum upload size: %.0f MB. Please use a smaller image.",
+                    MAX_IMAGE_FILE_BYTES / 1024.0 / 1024.0
+                )
+            );
         }
+    }
 
-        int width = image.getWidth();
-        int height = image.getHeight();
-
+    public static void validateImageDimensions(int width, int height) {
         if (width < MIN_IMAGE_DIMENSION || height < MIN_IMAGE_DIMENSION) {
             throw new IllegalArgumentException(
                 "Image too small. Minimum dimensions: " +
@@ -57,6 +63,24 @@ public class ValidationUtil {
                 MAX_IMAGE_DIMENSION + "x" + MAX_IMAGE_DIMENSION
             );
         }
+
+        long totalPixels = (long) width * height;
+        if (totalPixels > MAX_IMAGE_PIXELS) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Image has too many pixels for the deployed server. Maximum: %.1f MP. Please resize the image.",
+                    MAX_IMAGE_PIXELS / 1_000_000.0
+                )
+            );
+        }
+    }
+
+    public static void validateImage(BufferedImage image) {
+        if (image == null) {
+            throw new IllegalArgumentException("Image cannot be null");
+        }
+
+        validateImageDimensions(image.getWidth(), image.getHeight());
     }
 
     public static void validateCapacity(BufferedImage image, int dataBits) {
