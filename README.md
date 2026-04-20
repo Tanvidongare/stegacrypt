@@ -6,6 +6,17 @@ The project was designed as a practical mini-project that brings together crypto
 
 At the core of the system, the backend encrypts every message with a fresh AES session key, protects that key with RSA-OAEP, and embeds the encrypted payload into image pixels using a randomized LSB strategy. The frontend then exposes that workflow through a guided interface for embedding, extraction, key management, and secure member-to-member message sharing. The result is a project that demonstrates how modern encryption and steganography can be combined in a real full-stack application.
 
+🌐 Live Demo
+
+You can access the fully deployed StegaCrypt application here:
+👉 https://stegacrpyt.netlify.app/
+
+This live version allows you to:
+
+Try real-time steganographic embedding and extraction
+Experience the secure chat workflow
+Test encryption + image-based message sharing directly from the browser
+
 ## Highlights
 
 - RSA public/private key workflow for safer message sharing
