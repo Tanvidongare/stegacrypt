@@ -31,6 +31,9 @@ public class StegaCryptApplication {
         System.out.println("   POST /api/embed           - Hide message using public key");
         System.out.println("   POST /api/extract         - Extract message using private key");
         System.out.println("   POST /api/capacity        - Check image capacity");
+        System.out.println("   POST /api/auth/login      - Login to secure chat");
+        System.out.println("   POST /api/auth/register   - Register secure chat account");
+        System.out.println("   GET  /api/auth/chat       - Load secure chat members and timeline");
         System.out.println("   GET  /api/health          - Health check");
         System.out.println("\nAccess at: http://localhost:8080\n");
     }

@@ -1,6 +1,7 @@
 package com.stegacrypt.controller;
 
 import com.stegacrypt.service.CompressionService;
+import com.stegacrypt.service.DemoUserService;
 import com.stegacrypt.service.ImageProcessingService;
 import com.stegacrypt.service.SteganographyService;
 import com.stegacrypt.util.AESUtil;
@@ -42,6 +43,9 @@ public class SteganographyController {
 
     @Autowired
     private SteganographyService steganographyService;
+
+    @Autowired
+    private DemoUserService demoUserService;
 
     @PostMapping("/generate-keys")
     public ResponseEntity<?> generateKeyPair() {
@@ -196,6 +200,17 @@ public class SteganographyController {
         response.put("service", "StegaCrypt API");
         response.put("version", "2.0.0");
         response.put("encryptionMode", "RSA-OAEP + AES-256-GCM");
+        response.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/demo-users")
+    public ResponseEntity<?> demoUsers() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("count", demoUserService.getDemoUsers().size());
+        response.put("users", demoUserService.getDemoUsers());
+        response.put("note", "These demo identities are generated for in-app sharing demonstrations only.");
         response.put("timestamp", System.currentTimeMillis());
         return ResponseEntity.ok(response);
     }

@@ -1,69 +1,42 @@
-﻿# StegaCrypt Web Application
+# StegaCrypt
 
-StegaCrypt is a web-based steganography project that hides encrypted text inside images. The current version uses a hybrid public-key design:
+StegaCrypt is a full-stack steganography web application that encrypts text and hides it inside images. It combines public-key cryptography, randomized LSB embedding, and a built-in secure chat workflow in one project.
 
-- RSA public key encrypts a one-time AES session key
-- AES-256-GCM encrypts the message payload
-- Randomized LSB steganography embeds the encrypted payload into the image
-- The steganography pixel path is deterministically tied to the RSA key pair
+## Highlights
 
-## What Changed
+- RSA public/private key workflow for safer message sharing
+- AES-256-GCM for message encryption with integrity protection
+- RSA-OAEP wrapping for one-time AES session keys
+- Randomized LSB steganography for image embedding
+- Capacity checking before embedding
+- Secure chat with login, registration, demo members, and recipient-based decryption
+- React frontend and Spring Boot backend
 
-The original build used a shared password for both encryption and pixel randomization. This version replaces that with public and private keys.
+## How It Works
 
-Embed flow:
-1. Generate or paste an RSA public key
-2. Encrypt the message with a random AES session key
-3. Wrap the AES key with RSA-OAEP
-4. Hide the final payload in the image
+### Embed
 
-Extract flow:
-1. Upload the stego image
-2. Paste the matching RSA private key
-3. Regenerate the randomized pixel sequence from the key pair
-4. Recover and decrypt the hidden payload
+1. Upload a carrier image.
+2. Generate or paste the recipient public key.
+3. Encrypt the message with a fresh AES session key.
+4. Wrap that key with RSA.
+5. Embed the payload into the image and export a PNG stego file.
 
-## Project Structure
+### Extract
 
-```text
-backend/
-  src/main/java/com/stegacrypt/
-    controller/SteganographyController.java
-    service/CompressionService.java
-    service/ImageProcessingService.java
-    service/SteganographyService.java
-    util/AESUtil.java
-    util/RSAUtil.java
-    util/BitUtil.java
-    util/PRNGUtil.java
-    util/ValidationUtil.java
-frontend/
-  src/
-    App.jsx
-    App.css
-    components/
-    services/api.js
-```
+1. Upload the stego image.
+2. Provide the matching RSA private key or use the secure chat flow.
+3. Rebuild the deterministic embedding path.
+4. Recover and decrypt the hidden message.
 
-## Backend API
+## Tech Stack
 
-Base URL: `http://localhost:8080/api`
+- Frontend: React, Vite, CSS
+- Backend: Spring Boot, Java 17, Maven
+- Crypto: RSA-2048, RSA-OAEP, AES-256-GCM
+- Image processing: randomized LSB steganography
 
-- `POST /generate-keys`
-  Returns a fresh RSA key pair in PEM format.
-- `POST /embed`
-  Multipart fields: `image`, `message`, `publicKey`, `useCompression`
-  Returns the stego image as PNG.
-- `POST /extract`
-  Multipart fields: `image`, `privateKey`
-  Returns the extracted plaintext message and metadata.
-- `POST /capacity`
-  Multipart field: `image`
-  Returns image capacity information.
-- `GET /health`
-  Returns service health and active encryption mode.
-
-## Running the Application
+## Local Run
 
 ### Backend
 
@@ -80,20 +53,23 @@ npm install
 npm run dev
 ```
 
-## Usage Notes
+Open `http://localhost:3000` after both services are running.
 
-- Share only the public key for embedding.
-- Keep the private key safe. Extraction will fail without the matching private key.
-- Always download the stego output as PNG.
-- JPG recompression can destroy hidden data.
+## Documentation
 
-## Security Summary
+- [Quick Start](docs/QUICKSTART.md)
+- [API Docs](docs/API_DOCS.md)
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Run Guide and User Manual](docs/RUN_ME.md)
+- [Project Report](docs/PROJECT_REPORT.md)
+- [Hosting and Project Working](docs/HOSTING_AND_PROJECT_WORKING.md)
 
-- RSA-2048 key pairs
-- RSA-OAEP with SHA-256 for session-key wrapping
-- AES-256-GCM for authenticated payload encryption
-- Randomized LSB embedding with deterministic key-derived pixel selection
-- Optional GZIP compression before encryption
+## Important Notes
+
+- Keep the private key or generated key file safe.
+- Use the exported PNG output for reliable extraction.
+- Avoid editing or recompressing the stego image after embedding.
+- Secure chat data is runtime-backed and may reset when the backend restarts.
 
 ## Academic Context
 

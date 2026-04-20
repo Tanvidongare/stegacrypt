@@ -1,20 +1,69 @@
-﻿import React, { useState } from 'react';
-import { CheckCircle, Copy, Loader, Unlock, Upload, XCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { CheckCircle, Copy, Loader, Unlock, Upload, Users, XCircle } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 import api from '../services/api';
 import { parseKeyFile } from '../utils/keyFile';
 
+const MEMBER_REFRESH_EVENT = 'stegacrypt-members-updated';
+const MEMBER_REFRESH_MS = 5000;
+
 function ExtractSection() {
+  const [extractMode, setExtractMode] = useState('keyfile');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [privateKey, setPrivateKey] = useState('');
   const [keyFileName, setKeyFileName] = useState('');
+  const [members, setMembers] = useState([]);
+  const [senderUsername, setSenderUsername] = useState('');
+  const [recipientUsername, setRecipientUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [extractedMessage, setExtractedMessage] = useState('');
   const [extractInfo, setExtractInfo] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadMembers() {
+      try {
+        const result = await api.getSecureChatMembers();
+        if (!active) return;
+
+        const loadedMembers = result.members || [];
+        setMembers(loadedMembers);
+        setSenderUsername((current) => {
+          if (current && loadedMembers.some((member) => member.username === current)) {
+            return current;
+          }
+          return loadedMembers[0]?.username || '';
+        });
+        setRecipientUsername((current) => {
+          if (current && loadedMembers.some((member) => member.username === current)) {
+            return current;
+          }
+          return loadedMembers[1]?.username || loadedMembers[0]?.username || '';
+        });
+      } catch (err) {
+        console.error('Failed to load secure chat members:', err);
+      }
+    }
+
+    const handleRefresh = () => {
+      loadMembers();
+    };
+
+    loadMembers();
+    window.addEventListener(MEMBER_REFRESH_EVENT, handleRefresh);
+    const intervalId = window.setInterval(loadMembers, MEMBER_REFRESH_MS);
+
+    return () => {
+      active = false;
+      window.removeEventListener(MEMBER_REFRESH_EVENT, handleRefresh);
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const handleImageSelect = (file) => {
     setImageFile(file);
@@ -57,8 +106,12 @@ function ExtractSection() {
       setError('Please select a stego image');
       return;
     }
-    if (!privateKey.trim()) {
+    if (extractMode === 'keyfile' && !privateKey.trim()) {
       setError('Please upload the matching key text file');
+      return;
+    }
+    if (extractMode === 'members' && !recipientUsername) {
+      setError('Please select the recipient member');
       return;
     }
 
@@ -68,7 +121,9 @@ function ExtractSection() {
     setExtractedMessage('');
 
     try {
-      const result = await api.extractMessage(imageFile, privateKey);
+      const result = extractMode === 'members'
+        ? await api.extractSharedImage(imageFile, recipientUsername, senderUsername)
+        : await api.extractMessage(imageFile, privateKey);
 
       if (result.success) {
         setExtractedMessage(result.message);
@@ -87,10 +142,28 @@ function ExtractSection() {
       console.error('Extract error:', err);
       const errorMsg = await api.getErrorMessage(err, 'Failed to extract message');
 
-      if (errorMsg.toLowerCase().includes('private key')) {
+      if (extractMode === 'members' && (
+        errorMsg.toLowerCase().includes('wrong keys') ||
+        errorMsg.toLowerCase().includes('invalid data length') ||
+        errorMsg.toLowerCase().includes('tag mismatch') ||
+        errorMsg.toLowerCase().includes('unable to authenticate') ||
+        errorMsg.toLowerCase().includes('unsupported stego payload format') ||
+        errorMsg.toLowerCase().includes('unsupported payload version') ||
+        errorMsg.toLowerCase().includes('payload length mismatch') ||
+        errorMsg.toLowerCase().includes('invalid payload metadata')
+      )) {
+        setError("This image doesn't match the selected Secure Chat members. If it was created with a downloaded key file, switch to Key File mode.");
+      } else if (errorMsg.toLowerCase().includes('private key')) {
         setError('The uploaded key file does not contain a valid private key.');
       } else if (errorMsg.toLowerCase().includes('wrong private key')) {
         setError('This key file does not match the public key used during embedding.');
+      } else if (
+        errorMsg.toLowerCase().includes('unsupported stego payload format') ||
+        errorMsg.toLowerCase().includes('unsupported payload version') ||
+        errorMsg.toLowerCase().includes('payload length mismatch') ||
+        errorMsg.toLowerCase().includes('invalid payload metadata')
+      ) {
+        setError('This image contains a hidden payload, but it does not match the expected extraction format for this mode.');
       } else if (errorMsg.toLowerCase().includes('invalid data length')) {
         setError('This image does not contain a readable hidden payload, or it has been altered.');
       } else {
@@ -122,27 +195,75 @@ function ExtractSection() {
 
   return (
     <div className="section">
-      <h2 className="section-title">Extract Hidden Message with the Key File</h2>
+      <h2 className="section-title">Extract Hidden Message</h2>
 
       <div className="form-group">
-        <label>1. Select Stego Image</label>
+        <label>1. Extraction Mode</label>
+        <div className="tab-navigation extract-mode-tabs">
+          <button
+            type="button"
+            className={`tab ${extractMode === 'keyfile' ? 'active' : ''}`}
+            onClick={() => setExtractMode('keyfile')}
+          >
+            <Upload size={18} />
+            <span>Key File</span>
+          </button>
+          <button
+            type="button"
+            className={`tab ${extractMode === 'members' ? 'active' : ''}`}
+            onClick={() => setExtractMode('members')}
+          >
+            <Users size={18} />
+            <span>Secure Chat Members</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>2. Select Stego Image</label>
         <ImageUpload onImageSelect={handleImageSelect} preview={imagePreview} />
       </div>
 
-      <div className="form-group">
-        <label>2. Upload the Matching Key Text File</label>
-        <label className={`key-file-upload ${privateKey ? 'has-file' : ''}`}>
-          <input
-            type="file"
-            accept=".txt,.pem,.key,application/json,text/plain"
-            onChange={handleKeyFileSelect}
-            disabled={loading}
-          />
-          <Upload size={24} />
-          <span>{keyFileName || 'Choose downloaded StegaCrypt key file'}</span>
-        </label>
-        <p className="field-hint">The private key is read from the file for extraction and is not displayed on the page.</p>
-      </div>
+      {extractMode === 'keyfile' ? (
+        <div className="form-group">
+          <label>3. Upload the Matching Key Text File</label>
+          <label className={`key-file-upload ${privateKey ? 'has-file' : ''}`}>
+            <input
+              type="file"
+              accept=".txt,.pem,.key,application/json,text/plain"
+              onChange={handleKeyFileSelect}
+              disabled={loading}
+            />
+            <Upload size={24} />
+            <span>{keyFileName || 'Choose downloaded StegaCrypt key file'}</span>
+          </label>
+          <p className="field-hint">The private key is read from the file for extraction and is not displayed on the page.</p>
+        </div>
+      ) : (
+        <div className="share-user-selectors">
+          <div className="form-group">
+            <label>3. Sender</label>
+            <select className="input" value={senderUsername} onChange={(e) => setSenderUsername(e.target.value)}>
+              {members.map((member) => (
+                <option key={member.username} value={member.username}>
+                  {member.fullName} (@{member.username})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>4. Recipient</label>
+            <select className="input" value={recipientUsername} onChange={(e) => setRecipientUsername(e.target.value)}>
+              {members.map((member) => (
+                <option key={member.username} value={member.username}>
+                  {member.fullName} (@{member.username})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert-error">
@@ -162,7 +283,7 @@ function ExtractSection() {
         <button
           className="btn btn-primary"
           onClick={handleExtract}
-          disabled={loading || !imageFile || !privateKey}
+          disabled={loading || !imageFile || (extractMode === 'keyfile' ? !privateKey : !recipientUsername)}
         >
           {loading ? (
             <>
@@ -213,10 +334,16 @@ function ExtractSection() {
           <h4>How to Extract</h4>
           <ol>
             <li>Upload the stego image created during embedding.</li>
-            <li>Upload the key text file downloaded during key generation.</li>
+            <li>{extractMode === 'members'
+              ? 'Select the sender and recipient used in Secure Chat.'
+              : 'Upload the key text file downloaded during key generation.'}</li>
             <li>Click Extract Message to decrypt and reveal the hidden text.</li>
           </ol>
-          <p className="warning">If the key file does not match, the hidden payload cannot be recovered.</p>
+          <p className="warning">
+            {extractMode === 'members'
+              ? 'Use the correct recipient account because extraction depends on the recipient private key.'
+              : 'If the key file does not match, the hidden payload cannot be recovered.'}
+          </p>
         </div>
       )}
     </div>

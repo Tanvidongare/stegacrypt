@@ -98,6 +98,63 @@ Response:
 }
 ```
 
+## 6. Secure Chat Login
+
+`POST /auth/login`
+
+Form fields:
+
+- `username`
+- `password`
+
+## 7. Secure Chat Registration
+
+`POST /auth/register`
+
+Form fields:
+
+- `fullName`
+- `username`
+- `password`
+
+## 8. Secure Chat Bootstrap
+
+`GET /auth/chat`
+
+Header:
+
+- `X-Auth-Token`
+
+Response:
+
+```json
+{
+  "success": true,
+  "currentUser": {
+    "fullName": "Abhishek Sushant Chaskar",
+    "username": "abhishek.sushant.chaskar",
+    "seeded": true
+  },
+  "members": [
+    {
+      "fullName": "Tanvi Dongare",
+      "username": "tanvi.dongare",
+      "seeded": true
+    }
+  ],
+  "seededMembers": [
+    {
+      "fullName": "Aditya Atul Deshpande",
+      "username": "aditya.atul.deshpande",
+      "seeded": true,
+      "passwordHint": "Stega@123"
+    }
+  ],
+  "messages": [],
+  "timestamp": 1710000000000
+}
+```
+
 ## Current Crypto Design
 
 - RSA-2048 key pair generation

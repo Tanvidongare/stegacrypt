@@ -1,7 +1,8 @@
 ﻿import React, { useState } from 'react';
-import { AlertCircle, Github, KeyRound, Lock, Shield, Unlock } from 'lucide-react';
+import { AlertCircle, Github, KeyRound, Lock, Shield, Share2, Unlock } from 'lucide-react';
 import EmbedSection from './components/EmbedSection';
 import ExtractSection from './components/ExtractSection';
+import ShareDemoSection from './components/ShareDemoSection';
 import './App.css';
 
 function App() {
@@ -35,10 +36,19 @@ function App() {
             <Unlock size={20} />
             <span>Extract Message</span>
           </button>
+          <button
+            className={`tab ${activeTab === 'share' ? 'active' : ''}`}
+            onClick={() => setActiveTab('share')}
+          >
+            <Share2 size={20} />
+            <span>Secure Chat</span>
+          </button>
         </div>
 
         <div className="tab-content">
-          {activeTab === 'embed' ? <EmbedSection /> : <ExtractSection />}
+          {activeTab === 'embed' && <EmbedSection />}
+          {activeTab === 'extract' && <ExtractSection />}
+          {activeTab === 'share' && <ShareDemoSection />}
         </div>
 
         <div className="info-section">
@@ -51,6 +61,7 @@ function App() {
                 <li>AES-256-GCM session encryption for the message payload</li>
                 <li>OAEP-based RSA wrapping for the AES session key</li>
                 <li>PRNG-based randomized pixel selection tied to the key pair</li>
+                <li>Login and registration based secure chat for project members</li>
               </ul>
             </div>
           </div>
@@ -62,6 +73,7 @@ function App() {
               <ul>
                 <li>Generate a compact key text file before embedding.</li>
                 <li>Upload the same key file during extraction.</li>
+                <li>Use Secure Chat to log in as a member and send hidden shares in-app.</li>
                 <li>Keep the stego image and key file separate until recovery.</li>
               </ul>
             </div>

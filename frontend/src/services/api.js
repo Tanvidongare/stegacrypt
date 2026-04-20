@@ -52,6 +52,83 @@ class StegaCryptAPI {
     return response.data;
   }
 
+  async getDemoUsers() {
+    const response = await axios.get(`${API_BASE_URL}/demo-users`);
+    return response.data;
+  }
+
+  async login(username, password) {
+    const formData = new FormData();
+    formData.append('username', username);
+    formData.append('password', password);
+    const response = await axios.post(`${API_BASE_URL}/auth/login`, formData);
+    return response.data;
+  }
+
+  async register({ fullName, username, password }) {
+    const formData = new FormData();
+    formData.append('fullName', fullName);
+    formData.append('username', username);
+    formData.append('password', password);
+    const response = await axios.post(`${API_BASE_URL}/auth/register`, formData);
+    return response.data;
+  }
+
+  async getSecureChatBootstrap(token) {
+    const response = await axios.get(`${API_BASE_URL}/auth/chat`, {
+      headers: {
+        'X-Auth-Token': token,
+      },
+    });
+    return response.data;
+  }
+
+  async sendSecureChatMessage(token, { recipientUsername, message, useCompression, imageFile }) {
+    const formData = new FormData();
+    formData.append('recipientUsername', recipientUsername);
+    formData.append('message', message);
+    formData.append('useCompression', useCompression);
+    formData.append('image', imageFile);
+
+    const response = await axios.post(`${API_BASE_URL}/auth/chat/send`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'X-Auth-Token': token,
+      },
+    });
+    return response.data;
+  }
+
+  async decryptSecureChatMessage(token, shareId) {
+    const response = await axios.post(`${API_BASE_URL}/auth/chat/decrypt/${shareId}`, null, {
+      headers: {
+        'X-Auth-Token': token,
+      },
+    });
+    return response.data;
+  }
+
+  async getSecureChatMembers() {
+    const response = await axios.get(`${API_BASE_URL}/auth/members`);
+    return response.data;
+  }
+
+  async extractSharedImage(imageFile, recipientUsername, senderUsername) {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    formData.append('recipientUsername', recipientUsername);
+    if (senderUsername) {
+      formData.append('senderUsername', senderUsername);
+    }
+
+    const response = await axios.post(`${API_BASE_URL}/auth/extract-shared-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   async getErrorMessage(error, fallbackMessage) {
     const responseData = error?.response?.data;
 
