@@ -51,6 +51,28 @@ Test encryption + image-based message sharing directly from the browser
 - Crypto: RSA-2048, RSA-OAEP, AES-256-GCM
 - Image processing: randomized LSB steganography
 
+## System Architecture
+
+```mermaid
+flowchart LR
+    User[User]
+    Frontend[React + Vite Frontend\nHosted on Netlify]
+    API[Spring Boot REST API\nHosted on Render]
+    Auth[Authentication and Member Layer]
+    Crypto[Crypto Layer\nRSA-OAEP + AES-256-GCM]
+    Stego[Steganography Layer\nRandomized LSB]
+    Image[PNG Stego Image]
+
+    User --> Frontend
+    Frontend -->|Axios Requests| API
+    API --> Auth
+    API --> Crypto
+    API --> Stego
+    Crypto --> Stego
+    Stego --> Image
+    Image --> Frontend
+```
+
 ## Project Modules
 
 - `frontend/` contains the full user interface for embedding, extraction, and secure chat actions.
