@@ -52,12 +52,12 @@ if not exist "frontend\node_modules" (
 echo Starting backend on http://localhost:8080 ...
 start "StegaCrypt Backend" cmd /k "cd /d ""%ROOT_DIR%backend"" && mvn spring-boot:run"
 
-echo Starting frontend on http://localhost:3000 ...
+echo Starting frontend on http://localhost:5573 ...
 start "StegaCrypt Frontend" cmd /k "cd /d ""%ROOT_DIR%frontend"" && npm run dev"
 
 echo.
 echo Backend and frontend are launching in separate windows.
-echo Frontend: http://localhost:3000
+echo Frontend: http://localhost:5573
 echo Backend health: http://localhost:8080/api/health
 echo.
 echo Close the launched terminal windows to stop the project.
